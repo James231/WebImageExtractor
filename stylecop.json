@@ -3,7 +3,7 @@
   "settings": {
     "documentationRules": {
       "companyName": "Jam-Es.com",
-      "copyrightText": "-------------------------------------------------------------------------------------------------\nWebIconExtractor - © Copyright 2020 - {companyName}\nLicensed under the {licenseName} License ({licenseName}). See {licenseFile} in the repo root for license information.\n-------------------------------------------------------------------------------------------------",
+      "copyrightText": "-------------------------------------------------------------------------------------------------\nWebImageExtractor - © Copyright 2020 - {companyName}\nLicensed under the {licenseName} License ({licenseName}). See {licenseFile} in the repo root for license information.\n-------------------------------------------------------------------------------------------------",
       "variables": {
         "licenseName": "MIT",
         "licenseFile": "LICENSE"
