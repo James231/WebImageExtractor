@@ -38,7 +38,7 @@ Recursion works by exploring Uris with segments removed, and by following hyperl
 
 Install using the NuGet Package Manager:
 ```
-Install-Package WebImageExtractor -Version 1.0.0
+Install-Package WebImageExtractor -Version 1.0.1
 ```
 
 Or
