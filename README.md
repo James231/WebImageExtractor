@@ -4,6 +4,8 @@
 
 [Blazor Demo](https://image-extractor.jam-es.com)
 
+[Available on NuGet](https://www.nuget.org/packages/WebImageExtractor/)
+
 Features (all are optional and can be speicified in `ExtractionSettings`):
 - Extracts Favicons and Apple touch icons.
 - Extracts images from `<img>` tags.
@@ -34,7 +36,14 @@ Recursion works by exploring Uris with segments removed, and by following hyperl
 
 ## Installation
 
-To use in your project you can download in the library [here]() or clone the repository and add the `WebImageExtractor` CS Project to your solution (then use a project reference in your own project).
+Install using the NuGet Package Manager:
+```
+Install-Package WebImageExtractor -Version 1.0.0
+```
+
+Or
+
+To use in your project you can download in the library [here]() or clone the repository and add the `WebImageExtractor` C# Project to your solution (then use a project reference in your own project).
 
 The library is a .NET Standard 2.0 library so works with both .NET Framework and .NET Core.
 
