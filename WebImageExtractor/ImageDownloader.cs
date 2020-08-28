@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using ImageMagick;
 using WebImageExtractor.Extensions;
@@ -19,8 +20,9 @@ namespace WebImageExtractor
         /// Downloads a MagickImage from a Uri.
         /// </summary>
         /// <param name="uri">Uri to download from.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Downloaded MagickImage, null if unsuccessful.</returns>
-        public static async Task<MagickImage> DownloadMagickImage(Uri uri)
+        public static async Task<MagickImage> DownloadMagickImage(Uri uri, CancellationToken cancellationToken)
         {
             if (Extractor.ExtractionSettings == null)
             {
@@ -43,12 +45,19 @@ namespace WebImageExtractor
                 uriString = uri.ToString();
             }
 
-            using (HttpResponseMessage response = await client.GetAsync(uriString))
-            using (Stream stream = await response.Content.ReadAsStreamAsync())
+            using (HttpResponseMessage response = await client.GetAsync(uriString, cancellationToken))
             {
-                MagickImage image = null;
-                image = new MagickImage(stream, uri.ToMagickFormat());
-                return image;
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
+                }
+
+                using (Stream stream = await response.Content.ReadAsStreamAsync())
+                {
+                    MagickImage image = null;
+                    image = new MagickImage(stream, uri.ToMagickFormat());
+                    return image;
+                }
             }
         }
 

@@ -4,6 +4,7 @@
 // -------------------------------------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using ImageMagick;
 
@@ -60,12 +61,13 @@ namespace WebImageExtractor
         /// <summary>
         /// Downloads the image or returns it if already downloaded.
         /// </summary>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Returns the image as instance of <see cref="MagickImage"/>.</returns>
-        public async Task<MagickImage> GetImageAsync()
+        public async Task<MagickImage> GetImageAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             if (!downloadAttempted)
             {
-                await DownloadImage();
+                await DownloadImage(cancellationToken);
             }
 
             return image;
@@ -80,7 +82,7 @@ namespace WebImageExtractor
             return image;
         }
 
-        private async Task DownloadImage()
+        private async Task DownloadImage(CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(Uri))
             {
@@ -92,7 +94,7 @@ namespace WebImageExtractor
                 return;
             }
 
-            image = await ImageDownloader.DownloadMagickImage(new Uri(Uri));
+            image = await ImageDownloader.DownloadMagickImage(new Uri(Uri), cancellationToken);
             downloadAttempted = true;
         }
     }

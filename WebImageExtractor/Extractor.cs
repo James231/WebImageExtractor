@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
 
@@ -19,10 +20,11 @@ namespace WebImageExtractor
         /// </summary>
         /// <param name="uri">Uri to start extracting from.</param>
         /// <param name="settings">Extraction Settings.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Extracted Favicons as instances of <see cref="WebImage"/>.</returns>
-        public static async Task<IEnumerable<WebImage>> GetFavicons(string uri, ExtractionSettings settings = null)
+        public static async Task<IEnumerable<WebImage>> GetFavicons(string uri, ExtractionSettings settings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Extract(uri, settings, HtmlUtilities.GetFavicons);
+            return await Extract(uri, settings, cancellationToken, HtmlUtilities.GetFavicons);
         }
 
         /// <summary>
@@ -30,10 +32,11 @@ namespace WebImageExtractor
         /// </summary>
         /// <param name="uri">Uri to start extracting from.</param>
         /// <param name="settings">Extraction Settings.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Extracted Apple Touch Icons as instances of <see cref="WebImage"/>.</returns>
-        public static async Task<IEnumerable<WebImage>> GetAppleTouchIcons(string uri, ExtractionSettings settings = null)
+        public static async Task<IEnumerable<WebImage>> GetAppleTouchIcons(string uri, ExtractionSettings settings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Extract(uri, settings, HtmlUtilities.GetAppleTouchIcons);
+            return await Extract(uri, settings, cancellationToken, HtmlUtilities.GetAppleTouchIcons);
         }
 
         /// <summary>
@@ -41,10 +44,11 @@ namespace WebImageExtractor
         /// </summary>
         /// <param name="uri">Uri to start extracting from.</param>
         /// <param name="settings">Extraction Settings.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Extracted Favicons and Apple Touch Icons as instances of <see cref="WebImage"/>.</returns>
-        public static async Task<IEnumerable<WebImage>> GetAllIcons(string uri, ExtractionSettings settings = null)
+        public static async Task<IEnumerable<WebImage>> GetAllIcons(string uri, ExtractionSettings settings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Extract(uri, settings, async (Uri u, HtmlDocument d, ExtractionSettings s) =>
+            return await Extract(uri, settings, cancellationToken, async (Uri u, HtmlDocument d, ExtractionSettings s) =>
             {
                 List<WebImage> favicons = await HtmlUtilities.GetFavicons(u, d, s);
                 List<WebImage> appleTouchIcons = await HtmlUtilities.GetAppleTouchIcons(u, d, s);
@@ -58,10 +62,11 @@ namespace WebImageExtractor
         /// </summary>
         /// <param name="uri">Uri to start extracting from.</param>
         /// <param name="settings">Extraction Settings.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Extracted images as instances of <see cref="WebImage"/>.</returns>
-        public static async Task<IEnumerable<WebImage>> GetPageImages(string uri, ExtractionSettings settings = null)
+        public static async Task<IEnumerable<WebImage>> GetPageImages(string uri, ExtractionSettings settings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Extract(uri, settings, HtmlUtilities.GetPageImages);
+            return await Extract(uri, settings, cancellationToken, HtmlUtilities.GetPageImages);
         }
 
         /// <summary>
@@ -69,10 +74,11 @@ namespace WebImageExtractor
         /// </summary>
         /// <param name="uri">Uri to start extracting from.</param>
         /// <param name="settings">Extraction Settings.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Extracted images as instances of <see cref="WebImage"/>.</returns>
-        public static async Task<IEnumerable<WebImage>> GetAllImages(string uri, ExtractionSettings settings = null)
+        public static async Task<IEnumerable<WebImage>> GetAllImages(string uri, ExtractionSettings settings = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Extract(uri, settings, async (Uri u, HtmlDocument d, ExtractionSettings s) =>
+            return await Extract(uri, settings, cancellationToken, async (Uri u, HtmlDocument d, ExtractionSettings s) =>
             {
                 List<WebImage> favicons = await HtmlUtilities.GetFavicons(u, d, s);
                 List<WebImage> appleTouchIcons = await HtmlUtilities.GetAppleTouchIcons(u, d, s);
@@ -83,7 +89,7 @@ namespace WebImageExtractor
             });
         }
 
-        private static async Task<IEnumerable<WebImage>> Extract(string uri, ExtractionSettings settings, Recurser.ExtractionMethod extractionMethod)
+        private static async Task<IEnumerable<WebImage>> Extract(string uri, ExtractionSettings settings, CancellationToken cancellationToken, Recurser.ExtractionMethod extractionMethod)
         {
             if (settings == null)
             {
@@ -92,7 +98,7 @@ namespace WebImageExtractor
 
             ExtractionSettings = settings;
 
-            return await Recurser.Recurse(extractionMethod, uri, settings);
+            return await Recurser.Recurse(extractionMethod, uri, settings, cancellationToken);
         }
     }
 }

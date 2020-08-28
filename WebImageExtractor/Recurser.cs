@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
 using WebImageExtractor.Extensions;
@@ -36,8 +37,9 @@ namespace WebImageExtractor
         /// <param name="method">Method which extracts images from speicific Uri.</param>
         /// <param name="uri">Uri to start recursion from.</param>
         /// <param name="settings">Extraction Settings.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Returns Images extracted from explored Uris.</returns>
-        public static async Task<IEnumerable<WebImage>> Recurse(ExtractionMethod method, string uri, ExtractionSettings settings)
+        public static async Task<IEnumerable<WebImage>> Recurse(ExtractionMethod method, string uri, ExtractionSettings settings, CancellationToken cancellationToken)
         {
             stopAlg = false;
             exploredUris = new List<string>();
@@ -57,15 +59,20 @@ namespace WebImageExtractor
 
             // Extract images for start Uri and linked pages.
             Uri extractUri = new Uri(uri);
-            List<WebImage> images = await HyperlinkRecurse(method, extractUri, settings, 0);
+            List<WebImage> images = await HyperlinkRecurse(method, extractUri, settings, 0, cancellationToken);
 
             // If enabled, recurse through Uris by removing segments from the end
             if (settings.RecurseUri)
             {
                 while (extractUri.AbsoluteUri != "/" && !stopAlg)
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return null;
+                    }
+
                     extractUri = extractUri.RemoveLastSegment();
-                    List<WebImage> moreImages = await HyperlinkRecurse(method, extractUri, settings, 0);
+                    List<WebImage> moreImages = await HyperlinkRecurse(method, extractUri, settings, 0, cancellationToken);
                     images.AddRange(moreImages);
                 }
             }
@@ -86,8 +93,9 @@ namespace WebImageExtractor
         /// <param name="uri">Uri to extract images and start hyperlink recursion from.</param>
         /// <param name="settings">Extraction Settings.</param>
         /// <param name="depth">Depth to recurse hyperlinks to.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Returns extracted images for given Uri and linked pages.</returns>
-        public static async Task<List<WebImage>> HyperlinkRecurse(ExtractionMethod method, Uri uri, ExtractionSettings settings, int depth)
+        public static async Task<List<WebImage>> HyperlinkRecurse(ExtractionMethod method, Uri uri, ExtractionSettings settings, int depth, CancellationToken cancellationToken)
         {
             HtmlDocument doc = null;
             bool gotDoc = false;
@@ -99,12 +107,28 @@ namespace WebImageExtractor
 
                 if (settings.OnStartNewPage != null)
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return null;
+                    }
+
                     await settings.OnStartNewPage.Invoke(uri.ToString());
                 }
 
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
+                }
+
                 gotDoc = true;
-                doc = await GetDocumnent(uri);
+                doc = await GetDocumnent(uri, cancellationToken);
                 images = await method.Invoke(uri, doc, settings);
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
+                }
+
                 if (settings.OnEndNewPage != null)
                 {
                     await settings.OnEndNewPage.Invoke(uri.ToString(), images);
@@ -123,7 +147,12 @@ namespace WebImageExtractor
 
                 if (!settings.LazyDownload)
                 {
-                    await Task.WhenAll(images.Select(i => i.GetImageAsync()).ToArray());
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return null;
+                    }
+
+                    await Task.WhenAll(images.Select(i => i.GetImageAsync(cancellationToken)).ToArray());
                 }
 
                 if (settings.OnFoundImage != null)
@@ -136,7 +165,12 @@ namespace WebImageExtractor
             {
                 if (!gotDoc)
                 {
-                    doc = await GetDocumnent(uri);
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return null;
+                    }
+
+                    doc = await GetDocumnent(uri, cancellationToken);
                 }
 
                 if (doc != null)
@@ -144,8 +178,13 @@ namespace WebImageExtractor
                     IEnumerable<HtmlATag> aTags = HtmlExtractor.ExtractATags(doc);
                     foreach (HtmlATag aTag in aTags)
                     {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            return null;
+                        }
+
                         Uri newUri = uri.AddHtmlLink(aTag.Href);
-                        List<WebImage> moreImages = await HyperlinkRecurse(method, newUri, settings, depth + 1);
+                        List<WebImage> moreImages = await HyperlinkRecurse(method, newUri, settings, depth + 1, cancellationToken);
                         images.AddRange(moreImages);
                     }
                 }
@@ -158,8 +197,9 @@ namespace WebImageExtractor
         /// Gets parsed Html as a <see cref="HtmlDocument"/> from a Uri.
         /// </summary>
         /// <param name="uri">Uri to get parsed Html from.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
         /// <returns>Returns parsed Html as an instance of <see cref="HtmlDocument"/>.</returns>
-        private static async Task<HtmlDocument> GetDocumnent(Uri uri)
+        private static async Task<HtmlDocument> GetDocumnent(Uri uri, CancellationToken cancellationToken)
         {
             if (Extractor.ExtractionSettings == null)
             {
@@ -187,8 +227,13 @@ namespace WebImageExtractor
                     uriString = uri.ToString();
                 }
 
-                using (HttpResponseMessage response = await client.GetAsync(uriString))
+                using (HttpResponseMessage response = await client.GetAsync(uriString, cancellationToken))
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return null;
+                    }
+
                     using (HttpContent content = response.Content)
                     {
                         string result = await content.ReadAsStringAsync();
