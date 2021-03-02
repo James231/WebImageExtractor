@@ -39,30 +39,34 @@ namespace WebImageExtractor.App
             int i = 0;
             foreach (WebImage image in images)
             {
-                string outputFilePath = Path.Combine(outputPath, $"{i}.{Enum.GetName(typeof(MagickFormat), image.GetImageIfDownloaded().Format).ToLower()}");
-                if (image.GetImageIfDownloaded().Format != MagickFormat.Svg)
+                var magickImages = image.GetImagesIfDownloaded();
+                foreach (MagickImage magickImage in magickImages)
                 {
-                    image.GetImageIfDownloaded().Write(outputFilePath, image.GetImageIfDownloaded().Format);
-                }
-                else
-                {
-                    // MagickImage.Write would rasterize svgs which is not what we want
-                    // Instead just download to a file
-                    HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(image.Uri);
-                    request.Method = "GET";
-                    using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                    string outputFilePath = Path.Combine(outputPath, $"{i}.{Enum.GetName(typeof(MagickFormat), magickImage.Format).ToLowerInvariant()}");
+                    if (magickImage.Format != MagickFormat.Svg)
                     {
-                        using (var reader = new System.IO.StreamReader(response.GetResponseStream()))
+                        magickImage.Write(outputFilePath, magickImage.Format);
+                    }
+                    else
+                    {
+                        // MagickImage.Write would rasterize svgs which is not what we want
+                        // Instead just download to a file
+                        HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(image.Uri);
+                        request.Method = "GET";
+                        using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                         {
-                            string responseText = reader.ReadToEnd();
-                            StreamWriter writer = new StreamWriter(outputFilePath, false);
-                            writer.Write(responseText);
-                            writer.Close();
+                            using (var reader = new System.IO.StreamReader(response.GetResponseStream()))
+                            {
+                                string responseText = reader.ReadToEnd();
+                                StreamWriter writer = new StreamWriter(outputFilePath, false);
+                                writer.Write(responseText);
+                                writer.Close();
+                            }
                         }
                     }
-                }
 
-                i++;
+                    i++;
+                }
             }
 
             Console.WriteLine("Finished");
