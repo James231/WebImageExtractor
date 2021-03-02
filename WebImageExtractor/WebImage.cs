@@ -4,6 +4,8 @@
 // -------------------------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ImageMagick;
@@ -15,7 +17,7 @@ namespace WebImageExtractor
     /// </summary>
     public class WebImage
     {
-        private MagickImage image;
+        private IList<IMagickImage<ushort>> images;
         private bool downloadAttempted = false;
 
         /// <summary>
@@ -55,7 +57,7 @@ namespace WebImageExtractor
 
         internal void SetImage(MagickImage val)
         {
-            image = val;
+            images = new List<IMagickImage<ushort>>(new IMagickImage<ushort>[] { val });
         }
 
         /// <summary>
@@ -70,7 +72,17 @@ namespace WebImageExtractor
                 await DownloadImage(cancellationToken);
             }
 
-            return image;
+            return GetImageIfDownloaded();
+        }
+
+        public async Task<IMagickImage<ushort>[]> GetImagesAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (!downloadAttempted)
+            {
+                await DownloadImage(cancellationToken);
+            }
+
+            return images?.ToArray();
         }
 
         /// <summary>
@@ -79,7 +91,19 @@ namespace WebImageExtractor
         /// <returns>MagickImage if it has been downloaded, otherwise null.</returns>
         public MagickImage GetImageIfDownloaded()
         {
-            return image;
+            if (images?.Count > 0)
+            {
+                return images[0] as MagickImage;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public IMagickImage<ushort>[] GetImagesIfDownloaded()
+        {
+            return images.ToArray();
         }
 
         private async Task DownloadImage(CancellationToken cancellationToken)
@@ -94,7 +118,7 @@ namespace WebImageExtractor
                 return;
             }
 
-            image = await ImageDownloader.DownloadMagickImage(new Uri(Uri), cancellationToken);
+            images = await ImageDownloader.DownloadMagickImages(new Uri(Uri), cancellationToken);
             downloadAttempted = true;
         }
     }

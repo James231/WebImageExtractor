@@ -152,7 +152,7 @@ namespace WebImageExtractor
                         return null;
                     }
 
-                    await Task.WhenAll(images.Select(i => i.GetImageAsync(cancellationToken)).ToArray());
+                    await Task.WhenAll(images.Select(i => i.GetImagesAsync(cancellationToken)).ToArray());
                 }
 
                 if (settings.OnFoundImage != null)

@@ -70,12 +70,13 @@ namespace WebImageExtractor.Extensions
         /// <returns>Image extension as <see cref="MagickFormat"/>.</returns>
         public static MagickFormat ToMagickFormat(this Uri uri)
         {
-            string uriString = uri.ToString().ToLower();
+            string uriString = uri.ToString().ToLowerInvariant();
+            string uriStringBody = System.Text.RegularExpressions.Regex.Replace(uriString, @"\?.+$|\#.+$", string.Empty);
 
             Array values = Enum.GetValues(typeof(MagickFormat));
             foreach (MagickFormat value in values)
             {
-                if (uriString.EndsWith($".{Enum.GetName(typeof(MagickFormat), value).ToLower()}"))
+                if (uriString.EndsWith($".{Enum.GetName(typeof(MagickFormat), value).ToLowerInvariant()}") || uriStringBody.EndsWith($".{Enum.GetName(typeof(MagickFormat), value).ToLowerInvariant()}"))
                 {
                     return value;
                 }
@@ -91,9 +92,9 @@ namespace WebImageExtractor.Extensions
         /// <returns>True if image extension supported by Magick.NET.</returns>
         public static bool HasImageExtension(this Uri uri)
         {
-            string uriString = uri.ToString().ToLower();
+            string uriString = uri.ToString().ToLowerInvariant();
             string[] magickFormats = Enum.GetNames(typeof(MagickFormat));
-            return magickFormats.Any(f => !Constants.BadMagickTypes.Contains(f) && uriString.EndsWith($".{f.ToLower()}"));
+            return magickFormats.Any(f => !Constants.BadMagickTypes.Contains(f) && uriString.EndsWith($".{f.ToLowerInvariant()}"));
         }
 
         /// <summary>
@@ -103,7 +104,7 @@ namespace WebImageExtractor.Extensions
         /// <returns>True if image extension is not supported.</returns>
         public static bool IsBadMagickType(this Uri uri)
         {
-            string uriString = uri.ToString().ToLower();
+            string uriString = uri.ToString().ToLowerInvariant();
             return Constants.BadMagickTypes.Any(ts => uriString.EndsWith($".{ts}"));
         }
 
@@ -114,7 +115,7 @@ namespace WebImageExtractor.Extensions
         /// <returns>True if image extension is .svg</returns>
         public static bool HasSvgExtension(this Uri uri)
         {
-            string uriString = uri.ToString().ToLower();
+            string uriString = uri.ToString().ToLowerInvariant();
             return uriString.EndsWith($".svg");
         }
 
